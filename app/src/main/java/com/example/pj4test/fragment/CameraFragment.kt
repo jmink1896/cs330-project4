@@ -43,17 +43,16 @@ import com.example.pj4test.cameraInference.PersonClassifier
 import com.example.pj4test.databinding.FragmentCameraBinding
 import org.tensorflow.lite.task.vision.detector.Detection
 
-import com.example.pj4test.fragment.AudioFragment
-
 class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
     private val TAG = "CameraFragment"
+
     private var _fragmentCameraBinding: FragmentCameraBinding? = null
 
     private val fragmentCameraBinding
         get() = _fragmentCameraBinding!!
-    
+
     private lateinit var personView: TextView
-    
+
     private lateinit var personClassifier: PersonClassifier
     private lateinit var bitmapBuffer: Bitmap
     private var preview: Preview? = null
@@ -62,6 +61,10 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
 
     /** Blocking camera operations are performed using this executor */
     private lateinit var cameraExecutor: ExecutorService
+
+    private var personTime = 0
+    private var noPersonTime = 0
+
 
     override fun onDestroyView() {
         _fragmentCameraBinding = null
@@ -203,37 +206,31 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                 imageHeight,
                 imageWidth
             )
-            
+
             // find at least one bounding box of the person
             val isPersonDetected: Boolean = results!!.find { it.categories[0].label == "person" } != null
-            
+
             // change UI according to the result
-//            if (isPersonDetected) {
-//                personView.text = "PERSON"
-//                personView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
-//                personView.setTextColor(ProjectConfiguration.activeTextColor)
-//
-//            } else {
-//                personView.text = "NO PERSON"
-//                personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
-//                personView.setTextColor(ProjectConfiguration.idleTextColor)
-//            }
-
-            if (AudioFragment.squatting == 1 && isPersonDetected) {
-                Log.d(TAG, "person entered")
-                AudioFragment.squatting = 2
-                personView.text = "PERSON"
-                personView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
-                personView.setTextColor(ProjectConfiguration.activeTextColor)
-
-            } else if (AudioFragment.squatting == 2 && !isPersonDetected) {
-                Log.d(TAG, "person left")
-                AudioFragment.squatting = 0
-                personView.text = "NO PERSON"
-                personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
-                personView.setTextColor(ProjectConfiguration.idleTextColor)
-                AudioFragment.startInferencing()
-
+            if (AudioFragment.state == 1 && isPersonDetected) {
+                noPersonTime = 0
+                personTime += 1
+                if (personTime > 50){
+                    Log.d(TAG, "person entered")
+                    AudioFragment.state = 2
+                    personView.text = "PERSON"
+                    personView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
+                    personView.setTextColor(ProjectConfiguration.activeTextColor)
+                }
+            } else if (AudioFragment.state == 2 && !isPersonDetected) {
+                personTime = 0
+                noPersonTime += 1
+                if (noPersonTime > 50){
+                    Log.d(TAG, "person left")
+                    AudioFragment.state = 0
+                    personView.text = "NO PERSON"
+                    personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
+                    personView.setTextColor(ProjectConfiguration.idleTextColor)
+                }
             }
 
             // Force a redraw

@@ -99,7 +99,7 @@ class SnapClassifier {
         val output = classifier.classify(tensor)
         Log.d(TAG, output.toString())
 
-        return output[0].categories.find { it.label == "Clap" }!!.score
+        return output[0].categories.find { it.label == "Clapping" }!!.score
     }
 
     fun startInferencing() {
