@@ -2,6 +2,10 @@ package com.example.pj4test
 
 import android.Manifest.permission.CAMERA
 import android.Manifest.permission.RECORD_AUDIO
+
+//proj4
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
@@ -15,7 +19,9 @@ class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
 
     // permissions
-    private val permissions = arrayOf(RECORD_AUDIO, CAMERA)
+//    private val permissions = arrayOf(RECORD_AUDIO, CAMERA)
+    private val permissions = arrayOf(RECORD_AUDIO, CAMERA, WRITE_EXTERNAL_STORAGE)
+
     private val PERMISSIONS_REQUEST = 0x0000001;
 
     @RequiresApi(Build.VERSION_CODES.M)

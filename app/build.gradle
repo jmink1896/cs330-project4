@@ -68,6 +68,10 @@ dependencies {
     // CameraX View class
     implementation "androidx.camera:camera-view:$camerax_version"
 
+    // proj4 CameraX Video class
+    implementation "androidx.camera:camera-video:$camerax_version"
+    implementation "androidx.camera:camera-extensions:$camerax_version"
+
     implementation 'org.tensorflow:tensorflow-lite-task-vision:0.4.0'
     implementation 'org.tensorflow:tensorflow-lite-gpu:2.9.0'
 }

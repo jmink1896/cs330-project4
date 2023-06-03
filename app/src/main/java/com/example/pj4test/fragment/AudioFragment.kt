@@ -1,5 +1,6 @@
 package com.example.pj4test.fragment
 
+import android.graphics.Camera
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -10,6 +11,8 @@ import androidx.fragment.app.Fragment
 import com.example.pj4test.ProjectConfiguration
 import com.example.pj4test.audioInference.SnapClassifier
 import com.example.pj4test.databinding.FragmentAudioBinding
+
+import com.example.pj4test.fragment.CameraFragment
 
 class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
     private val TAG = "AudioFragment"
@@ -77,9 +80,12 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
 //                snapView.setTextColor(ProjectConfiguration.idleTextColor)
 //            }
             if (state == 0 && score > SnapClassifier.THRESHOLD) {
-                Log.d(TAG, "snap detected")
+                Log.d(TAG, "clap detected")
                 state = 1
                 snapView.text = "RECORDING"
+                CameraFragment.detectionOn = true
+//                requireContext()
+
                 snapView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
                 snapView.setTextColor(ProjectConfiguration.activeTextColor)
 //                snapClassifier.stopInferencing()
@@ -87,6 +93,7 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
             else if (state == 0 && score < SnapClassifier.THRESHOLD) {
 //                Log.d(TAG, "snap detected")
                 snapView.text = "NOT RECORDING"
+                CameraFragment.detectionOn = false
                 snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
                 snapView.setTextColor(ProjectConfiguration.idleTextColor)
             }

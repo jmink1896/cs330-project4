@@ -17,6 +17,7 @@ package com.example.pj4test.cameraInference
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Debug
 import android.os.SystemClock
 import android.util.Log
 import com.example.pj4test.audioInference.SnapClassifier
@@ -29,6 +30,8 @@ import org.tensorflow.lite.task.vision.detector.Detection
 import org.tensorflow.lite.task.vision.detector.ObjectDetector
 
 class PersonClassifier {
+
+    private val TAG = "PersonClassifier"
     // Libraries for object detection
     lateinit var objectDetector: ObjectDetector
 
@@ -83,6 +86,8 @@ class PersonClassifier {
 
         val results = objectDetector.detect(tensorImage)
         inferenceTime = SystemClock.uptimeMillis() - inferenceTime
+
+//        Log.d(TAG, "analyzer running" )
         objectDetectorListener?.onObjectDetectionResults(
             results,
             inferenceTime,
