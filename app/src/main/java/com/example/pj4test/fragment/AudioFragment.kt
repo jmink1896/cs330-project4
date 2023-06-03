@@ -9,9 +9,11 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.pj4test.ProjectConfiguration
+import com.example.pj4test.R
 import com.example.pj4test.audioInference.SnapClassifier
 import com.example.pj4test.databinding.FragmentAudioBinding
 
+import com.example.pj4test.MainActivity
 import com.example.pj4test.fragment.CameraFragment
 
 class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
@@ -25,6 +27,12 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
 //    // classifiers
 //    lateinit var snapClassifier: SnapClassifier
 
+    private var mainActivity: MainActivity? = null
+
+    fun sayHello(){
+        Log.d(TAG, "hello! this is AudioFragment instance")
+    }
+
     companion object {
         var state: Int = 0
         // classifiers
@@ -37,12 +45,15 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
     // views
     lateinit var snapView: TextView
 
+//    val mainActivity = requireActivity() as MainActivity
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
         _fragmentAudioBinding = FragmentAudioBinding.inflate(inflater, container, false)
+//        mainActivity.sayHello()
 
         return fragmentAudioBinding.root
     }
@@ -55,6 +66,9 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
         snapClassifier = SnapClassifier()
         snapClassifier.initialize(requireContext())
         snapClassifier.setDetectorListener(this)
+
+        mainActivity =  requireActivity() as MainActivity
+        mainActivity?.sayHello()
     }
 
     override fun onPause() {
@@ -83,8 +97,8 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
                 Log.d(TAG, "clap detected")
                 state = 1
                 snapView.text = "RECORDING"
-                CameraFragment.detectionOn = true
-//                requireContext()
+                mainActivity?.setPersonDetectionOn(true)
+
 
                 snapView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
                 snapView.setTextColor(ProjectConfiguration.activeTextColor)
@@ -93,7 +107,8 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
             else if (state == 0 && score < SnapClassifier.THRESHOLD) {
 //                Log.d(TAG, "snap detected")
                 snapView.text = "NOT RECORDING"
-                CameraFragment.detectionOn = false
+//                mainActivity?.setPersonDetectionOn(false)
+
                 snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
                 snapView.setTextColor(ProjectConfiguration.idleTextColor)
             }

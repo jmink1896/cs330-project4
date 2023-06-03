@@ -15,6 +15,12 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import java.util.*
 
+// fragment management
+import  androidx.fragment.app.FragmentContainerView
+import com.example.pj4test.fragment.CameraFragment
+import com.example.pj4test.fragment.AudioFragment
+
+
 class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
 
@@ -24,12 +30,29 @@ class MainActivity : AppCompatActivity() {
 
     private val PERMISSIONS_REQUEST = 0x0000001;
 
-    @RequiresApi(Build.VERSION_CODES.M)
+    val fragmentManager = supportFragmentManager
+
+
+    // camera fragment
+    private var cameraFragment: CameraFragment? = null
+    // audio fragment
+    private var audioFragment: AudioFragment? = null
+
+
+            @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         Log.d(TAG, "onCreate")
 
+        val caneraFragmentContainer = findViewById<FragmentContainerView>(R.id.cameraFragmentContainerView)
+        cameraFragment = supportFragmentManager.findFragmentById(caneraFragmentContainer.id) as? CameraFragment
+//        cameraFragment?.sayHello()
+        val audioFragmentContainer = findViewById<FragmentContainerView>(R.id.audioFragmentContainerView)
+        audioFragment = supportFragmentManager.findFragmentById(audioFragmentContainer.id) as? AudioFragment
+
+        cameraFragment?.sayHello()
+        audioFragment?.sayHello()
         checkPermissions() // check permissions
     }
 
@@ -37,9 +60,20 @@ class MainActivity : AppCompatActivity() {
     private fun checkPermissions() {
         if (permissions.all{ActivityCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED}){
             Log.d(TAG, "All Permission Granted")
+
+
         }
         else{
             requestPermissions(permissions, PERMISSIONS_REQUEST)
         }
+    }
+
+
+    fun sayHello(){
+        Log.d(TAG, "hello! this is MainActivity instance")
+    }
+
+    fun setPersonDetectionOn(on:Boolean){
+        cameraFragment?.setDetectionOn(on)
     }
 }

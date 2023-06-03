@@ -71,6 +71,9 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
 
     private val fragmentCameraBinding
         get() = _fragmentCameraBinding!!
+
+
+
    
     private lateinit var personView: TextView
 
@@ -88,6 +91,15 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
     private var noPersonTime = 0
 
 
+    fun sayHello(){
+        Log.d(TAG, "hello! this is CameraFragment instance")
+    }
+
+    // main activitiy instance
+    private var mainActivity: MainActivity? = null
+
+    // camera provider
+    private lateinit var cameraProvider: ProcessCameraProvider
 
 
     // proj4
@@ -104,16 +116,40 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
 
 //     }
     // end of proj4
+
+    private var detectionOn: Boolean = false
+    private var clearScreen: Boolean = false
+
      companion object {
  //        private const val TAG = "CameraXApp"
          private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
 
-         var detectionOn: Boolean = false
-
-
          }
     private fun isDetectionOn(): Boolean{
         return detectionOn
+    }
+
+    fun setDetectionOn(on:Boolean){
+        detectionOn = on
+
+        if (on){
+            try {
+                // A variable number of use-cases can be passed here -
+                // camera provides access to CameraControl & CameraInfo
+                camera = cameraProvider.bindToLifecycle(
+                    this,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+//                    preview,
+                imageAnalyzer
+//                ,videoCapture
+//            TODO: add recording feature here
+//            https://developer.android.com/training/camerax/video-capture
+                )
+                Log.d(TAG, "Use case imageAnalyzer bound to cameraProvider")
+            } catch (exc: Exception) {
+                Log.e(TAG, "Use case imageAnalyzer failed", exc)
+            }
+        }
     }
 
     override fun onDestroyView() {
@@ -152,6 +188,9 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
         }
 
         personView = fragmentCameraBinding.PersonView
+
+        mainActivity =  requireActivity() as MainActivity
+        mainActivity?.sayHello()
     }
 
     // Initialize CameraX, and prepare to bind the camera use cases
@@ -160,7 +199,7 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
         cameraProviderFuture.addListener(
             {
                 // CameraProvider
-                val cameraProvider = cameraProviderFuture.get()
+                cameraProvider = cameraProviderFuture.get()
 
                 // Build and bind the camera use cases
                 bindCameraUseCases(cameraProvider)
@@ -247,7 +286,7 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                 this,
                 cameraSelector,
                 preview,
-                imageAnalyzer
+//                imageAnalyzer
 //                ,videoCapture
 //            TODO: add recording feature here
 //            https://developer.android.com/training/camerax/video-capture
@@ -297,11 +336,11 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
         val imageRotation = image.imageInfo.rotationDegrees
 
         // Pass Bitmap and rotation to the object detector helper for processing and detection
-         if (isDetectionOn()) {
-//             Log.d(TAG, "detectObjects: detecting")
-             personClassifier.detect(bitmapBuffer, imageRotation)
-         }
-//        personClassifier.detect(bitmapBuffer, imageRotation)
+//         if (isDetectionOn()) {
+////             Log.d(TAG, "detectObjects: detecting")
+//             personClassifier.detect(bitmapBuffer, imageRotation)
+//         }
+        personClassifier.detect(bitmapBuffer, imageRotation)
     }
 
 
@@ -394,19 +433,19 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
         imageWidth: Int
     ) {
         activity?.runOnUiThread {
-            // Pass necessary information to OverlayView for drawing on the canvas
-            fragmentCameraBinding.overlay.setResults(
-                results ?: LinkedList<Detection>(),
-                imageHeight,
-                imageWidth
-            )
+//            // Pass necessary information to OverlayView for drawing on the canvas
+//            fragmentCameraBinding.overlay.setResults(
+//                results ?: LinkedList<Detection>(),
+//                imageHeight,
+//                imageWidth
+//            )
 
             // find at least one bounding box of the person
             val isPersonDetected: Boolean = results!!.find { it.categories[0].label == "person" } != null
 
-            if (isPersonDetected){
-                Log.d(TAG, "person detected")
-            }
+//            if (isPersonDetected){
+//                Log.d(TAG, "person detected")
+//            }
 
 
             // change UI according to the result
@@ -425,11 +464,33 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                 noPersonTime += 1
                 if (noPersonTime > 50){
                     Log.d(TAG, "person left")
+                    setDetectionOn(false)
+
+                    // once the person leaves, clear the screen on the next round
+                    clearScreen = true
                     AudioFragment.state = 0
                     personView.text = "NO PERSON"
                     personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
                     personView.setTextColor(ProjectConfiguration.idleTextColor)
+
+                    cameraProvider.unbind(imageAnalyzer)
                 }
+            }
+
+            if (isDetectionOn()){
+                // Pass necessary information to OverlayView for drawing on the canvas
+                fragmentCameraBinding.overlay.setResults(
+                    results ?: LinkedList<Detection>(),
+                    imageHeight,
+                    imageWidth
+                )
+            }
+            else {
+                fragmentCameraBinding.overlay.setResults(
+                    LinkedList<Detection>() ?: LinkedList<Detection>(),
+                    imageHeight,
+                    imageWidth
+                )
             }
 
             // Force a redraw
