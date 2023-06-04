@@ -76,4 +76,12 @@ class MainActivity : AppCompatActivity() {
     fun setPersonDetectionOn(on:Boolean){
         cameraFragment?.setDetectionOn(on)
     }
+
+    fun stopRecording(){
+        cameraFragment?.captureVideo()
+    }
+
+    fun setAudioInference(on: Boolean){
+        audioFragment?.setAudioInference(on)
+    }
 }

@@ -47,6 +47,8 @@ import android.content.ContentValues
 import android.provider.MediaStore
 import android.os.Build
 import android.hardware.camera2.CameraCharacteristics
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.camera.camera2.interop.Camera2CameraInfo
 // proj4: finish import
 
@@ -72,7 +74,7 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
     private val fragmentCameraBinding
         get() = _fragmentCameraBinding!!
 
-
+    private var toneGen1: ToneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100);
 
    
     private lateinit var personView: TextView
@@ -103,35 +105,23 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
 
 
     // proj4
-//     private var recording: Recording? = null
-//     private var videoCapture: VideoCapture<Recorder>? = null
-//     private val activity = getActivity()
-//     private var msg = ""
-//     companion object {
-// //        private const val TAG = "CameraXApp"
-//         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
-
-//         var detectionOn: Boolean = false
-
-
-//     }
+     private var recording: Recording? = null
+     private var videoCapture: VideoCapture<Recorder>? = null
     // end of proj4
 
-    private var detectionOn: Boolean = false
-    private var clearScreen: Boolean = false
+    private val idleDetectionPeriod = 200L
+    private val busyDetectionPeriod = 10L
+
+    private var isIdle = true
+
 
      companion object {
  //        private const val TAG = "CameraXApp"
          private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
 
          }
-    private fun isDetectionOn(): Boolean{
-        return detectionOn
-    }
 
     fun setDetectionOn(on:Boolean){
-        detectionOn = on
-
         if (on){
             try {
                 // A variable number of use-cases can be passed here -
@@ -139,16 +129,36 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                 camera = cameraProvider.bindToLifecycle(
                     this,
                     CameraSelector.DEFAULT_BACK_CAMERA,
-//                    preview,
-                imageAnalyzer
-//                ,videoCapture
-//            TODO: add recording feature here
-//            https://developer.android.com/training/camerax/video-capture
+                    imageAnalyzer
                 )
                 Log.d(TAG, "Use case imageAnalyzer bound to cameraProvider")
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case imageAnalyzer failed", exc)
             }
+        }
+        else {
+            cameraProvider.unbind(imageAnalyzer)
+        }
+    }
+
+
+    fun setRecordingOn(on:Boolean){
+        if (on){
+            try {
+                // A variable number of use-cases can be passed here -
+                // camera provides access to CameraControl & CameraInfo
+                camera = cameraProvider.bindToLifecycle(
+                    this,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    videoCapture
+                )
+                Log.d(TAG, "Use case imageAnalyzer bound to cameraProvider")
+            } catch (exc: Exception) {
+                Log.e(TAG, "Use case imageAnalyzer failed", exc)
+            }
+        }
+        else {
+            cameraProvider.unbind(videoCapture)
         }
     }
 
@@ -189,6 +199,10 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
 
         personView = fragmentCameraBinding.PersonView
 
+        personView.text = "NOT RECORDING"
+        personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
+        personView.setTextColor(ProjectConfiguration.idleTextColor)
+
         mainActivity =  requireActivity() as MainActivity
         mainActivity?.sayHello()
     }
@@ -216,17 +230,6 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
 
         val cameraSelector =
             CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
-                // proj 4
-//                .addCameraFilter {
-//                    it.filter { camInfo ->
-//                        val level = Camera2CameraInfo.from(camInfo)
-//                            .getCameraCharacteristic(
-//                                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
-//                            )
-//                        level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3
-//                    }
-//                }
-                // end proj 4
 
 
         // Preview. Only using the 4:3 ratio because this is the closest to our models
@@ -248,36 +251,21 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                 .setOutputImageFormat(OUTPUT_IMAGE_FORMAT_RGBA_8888)
                 .build()
         // The analyzer can then be assigned to the instance
-        imageAnalyzer!!.setAnalyzer(cameraExecutor) { image -> detectObjects(image) }
+        imageAnalyzer!!.setAnalyzer(cameraExecutor) { image ->
+            detectObjects(image)
+            Thread.sleep(idleDetectionPeriod)
+        }
 
         // proj4
         // Create the VideoCapture UseCase and make it available to use
         // in the other part of the application.
-//        val recorder = Recorder.Builder()
-//            .setQualitySelector(QualitySelector.from(Quality.HD))
-//            .build()
-//        videoCapture = VideoCapture.withOutput(recorder)
+        val recorder = Recorder.Builder()
+            .setQualitySelector(QualitySelector.from(Quality.HD))
+            .build()
+        videoCapture = VideoCapture.withOutput(recorder)
 
         // Must unbind the use-cases before rebinding them
         cameraProvider.unbindAll()
-
-//        try {
-//            // A variable number of use-cases can be passed here -
-//            // camera provides access to CameraControl & CameraInfo
-//            camera = cameraProvider.bindToLifecycle(
-//                this,
-//                cameraSelector,
-//                preview,
-////                imageAnalyzer,
-////                videoCapture
-////            TODO: add recording feature here
-////            https://developer.android.com/training/camerax/video-capture
-//
-//            )
-//            Log.d(TAG, "Use case preview bound to cameraProvider")
-//        } catch (exc: Exception) {
-//            Log.e(TAG, "Use case preview failed", exc)
-//        }
 
         try {
             // A variable number of use-cases can be passed here -
@@ -285,34 +273,16 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
             camera = cameraProvider.bindToLifecycle(
                 this,
                 cameraSelector,
-                preview,
-//                imageAnalyzer
-//                ,videoCapture
-//            TODO: add recording feature here
-//            https://developer.android.com/training/camerax/video-capture
+                preview
             )
             Log.d(TAG, "Use case imageAnalyzer bound to cameraProvider")
         } catch (exc: Exception) {
             Log.e(TAG, "Use case imageAnalyzer failed", exc)
         }
+        setDetectionOn(true)
 
-//        try {
-//            // A variable number of use-cases can be passed here -
-//            // camera provides access to CameraControl & CameraInfo
-//            camera = cameraProvider.bindToLifecycle(
-//                this,
-//                cameraSelector,
-////                preview,
-////                imageAnalyzer,
-//                videoCapture
-////            TODO: add recording feature here
-////            https://developer.android.com/training/camerax/video-capture
-//            )
-//            Log.d(TAG, "Use case videoCapture bound to cameraProvider")
+        mainActivity?.setAudioInference(false)
 
-//        } catch (exc: Exception) {
-//            Log.e(TAG, "Use case videoCapture failed", exc)
-//        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -336,91 +306,87 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
         val imageRotation = image.imageInfo.rotationDegrees
 
         // Pass Bitmap and rotation to the object detector helper for processing and detection
-//         if (isDetectionOn()) {
-////             Log.d(TAG, "detectObjects: detecting")
-//             personClassifier.detect(bitmapBuffer, imageRotation)
-//         }
         personClassifier.detect(bitmapBuffer, imageRotation)
     }
 
 
     // proj4
-    // private fun captureVideo(cameraProvider: ProcessCameraProvider) {
-    //     // check if videoCapture UseCase has been created successfully
-    //     val videoCapture = this.videoCapture ?: return
+     fun captureVideo() {
+         // check if videoCapture UseCase has been created successfully
+         val videoCapture = this.videoCapture ?: return
 
-    //     // if some recording is ongoing
-    //     val curRecording = recording
-    //     if (curRecording != null) {
-    //         // stop current recording
-    //         curRecording.stop()
-    //         recording = null
-    //         return
-    //     }
+         // if some recording is ongoing
+         val curRecording = recording
+         if (curRecording != null) {
+             // stop current recording
+             curRecording.stop()
+             recording = null
+             return
+         }
 
-    //     // create and start new recording session
-    //     val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
-    //         .format(System.currentTimeMillis())
-    //     val contentValues = ContentValues().apply() {
-    //         put(MediaStore.MediaColumns.DISPLAY_NAME, name)
-    //         put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
-    //         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-    //             put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
-    //         }
-    //     }
+         // create and start new recording session
+         val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US)
+             .format(System.currentTimeMillis())
+         val contentValues = ContentValues().apply() {
+             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+             put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                 put(MediaStore.Video.Media.RELATIVE_PATH, "Movies/CameraX-Video")
+             }
+         }
 
-    //     // create a camera selector to bind image analysis to life cycle
-    //     val cameraSelector =
-    //         CameraSelector.Builder()
-    //             .requireLensFacing(CameraSelector.LENS_FACING_BACK)
-    //             .build()
+         // create a camera selector to bind image analysis to life cycle
+         val cameraSelector =
+             CameraSelector.Builder()
+                 .requireLensFacing(CameraSelector.LENS_FACING_BACK)
+                 .build()
 
-    //     // create storing option in extra storage
-    //     val mediaStoreOutputOptions = MediaStoreOutputOptions
-    //         .Builder(requireActivity().contentResolver,
-    //             MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
-    //         .setContentValues(contentValues)
-    //         .build()
+         // create storing option in extra storage
+         val mediaStoreOutputOptions = MediaStoreOutputOptions
+             .Builder(requireActivity().contentResolver,
+                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+             .setContentValues(contentValues)
+             .build()
 
-    //     // set the output option of VideoCapture to Recorder
-    //     recording = videoCapture.output
-    //         .prepareRecording(this.requireContext(), mediaStoreOutputOptions)
-    //         .start(ContextCompat.getMainExecutor(this.requireContext())) {
-    //                 recordEvent -> when(recordEvent) {
-    //             is VideoRecordEvent.Start -> {
-    //                 // call the change of the text in audio fragment snapview
-    //                 try {
-    //                     // A variable number of use-cases can be passed here -
-    //                     // camera provides access to CameraControl & CameraInfo
-    //                     camera = cameraProvider.bindToLifecycle(
-    //                         this,
-    //                         cameraSelector,
-    //                         imageAnalyzer,
-    //                     )
-    //                 } catch (exc: Exception) {
-    //                     Log.e(TAG, "Use case binding failed", exc)
-    //                 }
-    //             }
-    //             is VideoRecordEvent.Finalize -> {
-    //                 if (!recordEvent.hasError()) {
-    //                     val msg = "Video capture succeeded: " +
-    //                             "${recordEvent.outputResults.outputUri}"
-    //                     Toast.makeText(this.context, msg, Toast.LENGTH_SHORT)
-    //                         .show()
-    //                     Log.d(TAG, msg)
-    //                 } else {
-    //                     recording?.close()
-    //                     recording = null
-    //                     Log.e(TAG, "Video capture ends with error: " +
-    //                             "${recordEvent.error}")
-    //                 }
-    //                 cameraProvider.unbind(imageAnalyzer)
+         // set the output option of VideoCapture to Recorder
+         recording = videoCapture.output
+             .prepareRecording(this.requireContext(), mediaStoreOutputOptions)
+             .start(ContextCompat.getMainExecutor(this.requireContext())) {
+                     recordEvent -> when(recordEvent) {
+                 is VideoRecordEvent.Start -> {
+                     // call the change of the text in audio fragment snapview
+                     personView.text = "RECORDING SET"
+                     personView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
+                     personView.setTextColor(ProjectConfiguration.activeTextColor)
+                     toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP,300);
 
-    //             }
-    //         }
-    //         }
+                     mainActivity?.setAudioInference(true)
+                 }
+                 is VideoRecordEvent.Finalize -> {
+                     if (!recordEvent.hasError()) {
+                         val msg = "Video capture succeeded: " +
+                                 "${recordEvent.outputResults.outputUri}"
+                         Toast.makeText(this.context, msg, Toast.LENGTH_SHORT)
+                             .show()
+                         Log.d(TAG, msg)
+                     } else {
+                         recording?.close()
+                         recording = null
+                         Log.e(TAG, "Video capture ends with error: " +
+                                 "${recordEvent.error}")
+                     }
+                    setRecordingOn(false)
+                    setDetectionOn(true)
+                     toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP,300);
 
-    // }
+                     personView.text = "NOT RECORDING"
+                     personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
+                     personView.setTextColor(ProjectConfiguration.idleTextColor)
+                 }
+             }
+             }
+
+     }
     // end proj4
 
 
@@ -433,65 +399,72 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
         imageWidth: Int
     ) {
         activity?.runOnUiThread {
-//            // Pass necessary information to OverlayView for drawing on the canvas
-//            fragmentCameraBinding.overlay.setResults(
-//                results ?: LinkedList<Detection>(),
-//                imageHeight,
-//                imageWidth
-//            )
+            // Pass necessary information to OverlayView for drawing on the canvas
+            fragmentCameraBinding.overlay.setResults(
+                results ?: LinkedList<Detection>(),
+                imageHeight,
+                imageWidth
+            )
 
             // find at least one bounding box of the person
             val isPersonDetected: Boolean = results!!.find { it.categories[0].label == "person" } != null
 
-//            if (isPersonDetected){
-//                Log.d(TAG, "person detected")
-//            }
-
 
             // change UI according to the result
-            if (AudioFragment.state == 1 && isPersonDetected) {
-                noPersonTime = 0
+            if (isPersonDetected) {
+                if (isIdle){
+                    imageAnalyzer!!.setAnalyzer(cameraExecutor) { image ->
+                        detectObjects(image)
+                        Thread.sleep(busyDetectionPeriod)
+                    }
+                    isIdle = false
+                }
+
                 personTime += 1
-                if (personTime > 50){
+
+                if (personTime > 20){
                     Log.d(TAG, "person entered")
-                    AudioFragment.state = 2
-                    personView.text = "PERSON"
-                    personView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
-                    personView.setTextColor(ProjectConfiguration.activeTextColor)
-                }
-            } else if (AudioFragment.state == 2 && !isPersonDetected) {
-                personTime = 0
-                noPersonTime += 1
-                if (noPersonTime > 50){
-                    Log.d(TAG, "person left")
+
                     setDetectionOn(false)
-
-                    // once the person leaves, clear the screen on the next round
-                    clearScreen = true
-                    AudioFragment.state = 0
-                    personView.text = "NO PERSON"
-                    personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
-                    personView.setTextColor(ProjectConfiguration.idleTextColor)
-
-                    cameraProvider.unbind(imageAnalyzer)
+                    setRecordingOn(true)
+                    // once the person enters, clear the screen
+                    fragmentCameraBinding.overlay.setResults(
+                        LinkedList<Detection>() ?: LinkedList<Detection>(),
+                        imageHeight,
+                        imageWidth
+                    )
+                    captureVideo()
                 }
-            }
-
-            if (isDetectionOn()){
-                // Pass necessary information to OverlayView for drawing on the canvas
-                fragmentCameraBinding.overlay.setResults(
-                    results ?: LinkedList<Detection>(),
-                    imageHeight,
-                    imageWidth
-                )
             }
             else {
-                fragmentCameraBinding.overlay.setResults(
-                    LinkedList<Detection>() ?: LinkedList<Detection>(),
-                    imageHeight,
-                    imageWidth
-                )
+                if (personTime > 0){
+                    personTime -= 1
+                }
+                if (personTime == 0 && !isIdle){
+                        imageAnalyzer!!.setAnalyzer(cameraExecutor) { image ->
+                            detectObjects(image)
+                            Thread.sleep(idleDetectionPeriod)
+                        }
+                        isIdle = true
+                }
+
+
             }
+//            else if (AudioFragment.state == 2 && !isPersonDetected) {
+//                personTime = 0
+//                noPersonTime += 1
+//                if (noPersonTime > 50){
+//                    Log.d(TAG, "person left")
+//                    setDetectionOn(false)
+//
+//                    AudioFragment.state = 0
+//                    personView.text = "NO PERSON"
+//                    personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
+//                    personView.setTextColor(ProjectConfiguration.idleTextColor)
+//                    cameraProvider.unbind(imageAnalyzer)
+//                }
+//            }
+
 
             // Force a redraw
             fragmentCameraBinding.overlay.invalidate()

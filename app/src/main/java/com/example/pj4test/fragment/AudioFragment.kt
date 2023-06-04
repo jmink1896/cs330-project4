@@ -28,18 +28,15 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
 //    lateinit var snapClassifier: SnapClassifier
 
     private var mainActivity: MainActivity? = null
-
+    // classifiers
+    lateinit var snapClassifier: SnapClassifier
     fun sayHello(){
         Log.d(TAG, "hello! this is AudioFragment instance")
     }
 
     companion object {
         var state: Int = 0
-        // classifiers
-        lateinit var snapClassifier: SnapClassifier
-        fun startInferencing() {
-            // Code for staticMethod2
-        }
+
 
     }
     // views
@@ -67,7 +64,13 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
         snapClassifier.initialize(requireContext())
         snapClassifier.setDetectorListener(this)
 
-        mainActivity =  requireActivity() as MainActivity
+        setAudioInference(false)
+
+        snapView.text = "SAFE"
+        snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
+        snapView.setTextColor(ProjectConfiguration.idleTextColor)
+
+        mainActivity = requireActivity() as MainActivity
         mainActivity?.sayHello()
     }
 
@@ -79,6 +82,18 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
     override fun onResume() {
         super.onResume()
         snapClassifier.startInferencing()
+    }
+
+
+    fun setAudioInference(on : Boolean){
+        if (on){
+            Log.d(TAG, "start audio inference")
+            snapClassifier.startInferencing()
+        }
+        else{
+            Log.d(TAG, "stop audio inference")
+            snapClassifier.stopInferencing()
+        }
     }
 
     override fun onResults(score: Float) {
@@ -93,25 +108,22 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
 //                snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
 //                snapView.setTextColor(ProjectConfiguration.idleTextColor)
 //            }
-            if (state == 0 && score > SnapClassifier.THRESHOLD) {
+            if (score > SnapClassifier.THRESHOLD) {
                 Log.d(TAG, "clap detected")
-                state = 1
-                snapView.text = "RECORDING"
-                mainActivity?.setPersonDetectionOn(true)
+                setAudioInference(false)
 
+                mainActivity?.stopRecording()
 
-                snapView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
-                snapView.setTextColor(ProjectConfiguration.activeTextColor)
-//                snapClassifier.stopInferencing()
+//                snapView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
+//                snapView.setTextColor(ProjectConfiguration.activeTextColor)
             }
-            else if (state == 0 && score < SnapClassifier.THRESHOLD) {
-//                Log.d(TAG, "snap detected")
-                snapView.text = "NOT RECORDING"
-//                mainActivity?.setPersonDetectionOn(false)
-
-                snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
-                snapView.setTextColor(ProjectConfiguration.idleTextColor)
-            }
+//            else if (state == 0 && score < SnapClassifier.THRESHOLD) {
+////                Log.d(TAG, "snap detected")
+//                snapView.text = "NOT RECORDING"
+//
+//                snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
+//                snapView.setTextColor(ProjectConfiguration.idleTextColor)
+//            }
         }
     }
 }
