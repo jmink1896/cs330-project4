@@ -65,11 +65,14 @@ import java.util.concurrent.Executors
 import com.example.pj4test.cameraInference.PersonClassifier
 import com.example.pj4test.databinding.FragmentCameraBinding
 import org.tensorflow.lite.task.vision.detector.Detection
-
+//import android.os.Handler
+import kotlinx.coroutines.*
 class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
     private val TAG = "CameraFragment"
    
     private var _fragmentCameraBinding: FragmentCameraBinding? = null
+
+//    private val handler = Handler()
 
     private val fragmentCameraBinding
         get() = _fragmentCameraBinding!!
@@ -358,7 +361,7 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                      personView.text = "RECORDING SET"
                      personView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
                      personView.setTextColor(ProjectConfiguration.activeTextColor)
-                     toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP,300);
+                     toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP,300);
 
                      mainActivity?.setAudioInference(true)
                  }
@@ -376,8 +379,13 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                                  "${recordEvent.error}")
                      }
                     setRecordingOn(false)
-                    setDetectionOn(true)
-                     toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP,300);
+                     GlobalScope.launch(Dispatchers.Main) {
+                         // delay for 5 seconds
+                         delay(5000)
+                         setDetectionOn(true)
+                     }
+
+                     toneGen1.startTone(ToneGenerator.TONE_PROP_BEEP,300);
 
                      personView.text = "NOT RECORDING"
                      personView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
