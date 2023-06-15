@@ -131,7 +131,8 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                 // camera provides access to CameraControl & CameraInfo
                 camera = cameraProvider.bindToLifecycle(
                     this,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
+//                    DEFAULT_BACK_CAMERA
+                    CameraSelector.DEFAULT_FRONT_CAMERA,
                     imageAnalyzer
                 )
                 Log.d(TAG, "Use case imageAnalyzer bound to cameraProvider")
@@ -152,7 +153,8 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
                 // camera provides access to CameraControl & CameraInfo
                 camera = cameraProvider.bindToLifecycle(
                     this,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
+
+                    CameraSelector.DEFAULT_FRONT_CAMERA,
                     videoCapture
                 )
                 Log.d(TAG, "Use case imageAnalyzer bound to cameraProvider")
@@ -230,9 +232,9 @@ class CameraFragment : Fragment(), PersonClassifier.DetectorListener {
     private fun bindCameraUseCases(cameraProvider: ProcessCameraProvider) {
 
         // CameraSelector - makes assumption that we're only using the back camera
-
+//        LENS_FACING_BACK
         val cameraSelector =
-            CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build()
+            CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build()
 
 
         // Preview. Only using the 4:3 ratio because this is the closest to our models
