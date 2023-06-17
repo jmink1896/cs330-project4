@@ -40,7 +40,7 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
 
     }
     // views
-    lateinit var snapView: TextView
+//    lateinit var snapView: TextView
 
 //    val mainActivity = requireActivity() as MainActivity
 
@@ -58,7 +58,7 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        snapView = fragmentAudioBinding.SnapView
+//        snapView = fragmentAudioBinding.SnapView
 
         snapClassifier = SnapClassifier()
         snapClassifier.initialize(requireContext())
@@ -66,9 +66,9 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
 
         setAudioInference(false)
 
-        snapView.text = "SAFE"
-        snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
-        snapView.setTextColor(ProjectConfiguration.idleTextColor)
+//        snapView.text = "SAFE"
+//        snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
+//        snapView.setTextColor(ProjectConfiguration.idleTextColor)
 
         mainActivity = requireActivity() as MainActivity
         mainActivity?.sayHello()
@@ -99,15 +99,7 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
     override fun onResults(score: Float) {
 //        TODO: start filming here when clap detected
         activity?.runOnUiThread {
-//            if (score > SnapClassifier.THRESHOLD) {
-//                snapView.text = "SNAP"
-//                snapView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
-//                snapView.setTextColor(ProjectConfiguration.activeTextColor)
-//            } else {
-//                snapView.text = "NO SNAP"
-//                snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
-//                snapView.setTextColor(ProjectConfiguration.idleTextColor)
-//            }
+
             if (score > SnapClassifier.THRESHOLD) {
                 Log.d(TAG, "clap detected")
                 setAudioInference(false)
@@ -117,13 +109,6 @@ class AudioFragment: Fragment(), SnapClassifier.DetectorListener {
 //                snapView.setBackgroundColor(ProjectConfiguration.activeBackgroundColor)
 //                snapView.setTextColor(ProjectConfiguration.activeTextColor)
             }
-//            else if (state == 0 && score < SnapClassifier.THRESHOLD) {
-////                Log.d(TAG, "snap detected")
-//                snapView.text = "NOT RECORDING"
-//
-//                snapView.setBackgroundColor(ProjectConfiguration.idleBackgroundColor)
-//                snapView.setTextColor(ProjectConfiguration.idleTextColor)
-//            }
         }
     }
 }
